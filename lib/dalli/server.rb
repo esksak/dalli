@@ -439,7 +439,10 @@ module Dalli
 
     def deserialize(value, flags)
       value = self.compressor.decompress(value) if (flags & FLAG_COMPRESSED) != 0
+      act_ctr_p_exist = value.include?("!ActionController::Parameters")
+      value = value.gsub(/!ActionController::Parameters/, "-ActiveSupport::HashWithIndifferentAccess")
       value = self.serializer.load(value) if (flags & FLAG_SERIALIZED) != 0
+      Dalli.logger.error "Not an actual error, ActionController::Paremeters still exists when deserialize, value (after substitued and Marshal loaded) = #{value}" if act_ctr_p_exist
       value
     rescue TypeError
       raise if $!.message !~ /needs to have method `_load'|exception class\/object expected|instance of IO needed|incompatible marshal file format/
